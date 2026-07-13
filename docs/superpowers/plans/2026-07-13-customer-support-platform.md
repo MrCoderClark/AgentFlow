@@ -6,7 +6,7 @@
 
 **Architecture:** Monorepo with unified FastAPI backend (REST + WebSocket + AI), Next.js 16 frontend (agent dashboard), and standalone Vite widget bundle. PostgreSQL + pgvector for data and RAG. Redis for WebSocket pub/sub. BYOK API keys per org.
 
-**Tech Stack:** Python 3.12+ / FastAPI / SQLAlchemy (async) / Alembic / PostgreSQL 16 + pgvector / Redis / Next.js 16 / Tailwind CSS v4 / shadcn/ui v4 / React Flow / Vite / Docker Compose
+**Tech Stack:** Python 3.12+ / uv / FastAPI / SQLAlchemy (async) / Alembic / PostgreSQL 16 + pgvector / Redis / Next.js 16 / Tailwind CSS v4 / shadcn/ui v4 / React Flow / Vite / Docker Compose
 
 ## Global Constraints
 
