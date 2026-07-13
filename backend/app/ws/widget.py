@@ -3,6 +3,7 @@ import uuid
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from sqlalchemy import select
 
+from app.ai.pipeline import process_customer_message
 from app.database import AsyncSessionLocal
 from app.models import Contact, Conversation, Message, Organization, SenderType
 from app.ws.manager import manager
@@ -127,12 +128,30 @@ async def widget_ws(ws: WebSocket, org_slug: str):
                         "content": content,
                     })
 
-                    # ponytail: placeholder until AI pipeline (Task 12)
+                    result = await process_customer_message(org.id, conv.id, content, db)
+
+                    bot_msg = Message(
+                        conversation_id=conv.id,
+                        sender_type=SenderType.bot,
+                        sender_id=conv.id,
+                        content=result.response,
+                    )
+                    db.add(bot_msg)
+                    await db.commit()
+
                     await ws.send_json({
                         "type": "message",
                         "sender_type": "bot",
-                        "content": "Thanks for your message. Let me look into that for you.",
+                        "content": result.response,
+                        "intent": result.intent,
                     })
+
+                    if result.escalated:
+                        await manager.broadcast_to_agents(str(org.id), {
+                            "type": "escalated",
+                            "conversation_id": conversation_id,
+                            "content": content,
+                        })
 
             elif action == "typing" and conversation_id:
                 async with AsyncSessionLocal() as db:
