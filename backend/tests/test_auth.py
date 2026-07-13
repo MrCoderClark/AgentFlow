@@ -59,3 +59,22 @@ async def test_login_wrong_password(client: AsyncClient):
         "org_slug": "wrong-co",
     })
     assert resp.status_code == 401
+
+
+async def test_invite_agent(client: AsyncClient):
+    reg = await client.post("/api/auth/register", json={
+        "org_name": "Invite Co",
+        "org_slug": "invite-co",
+        "email": "admin@invite.com",
+        "password": "pass123",
+        "name": "Admin",
+    })
+    token = reg.json()["access_token"]
+
+    resp = await client.post(
+        "/api/auth/invite",
+        json={"email": "agent@invite.com", "name": "Agent", "role": "agent"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["message"] == "Invite sent"

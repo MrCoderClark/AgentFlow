@@ -6,16 +6,20 @@ from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import ALGORITHM, create_access_token, create_refresh_token
+from pydantic import BaseModel
+
+from app.api.deps import ALGORITHM, create_access_token, create_refresh_token, require_admin
 from app.config import settings
 from app.database import get_db
 from app.models import Agent, AgentRole, Organization
 from app.schemas.auth import (
+    InviteRequest,
     LoginRequest,
     RefreshRequest,
     RegisterRequest,
     TokenResponse,
 )
+from app.services.email import send_invite_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -94,4 +98,65 @@ async def refresh(req: RefreshRequest, db: AsyncSession = Depends(get_db)):
     return TokenResponse(
         access_token=create_access_token(agent_id, org_id),
         refresh_token=create_refresh_token(agent_id, org_id),
+    )
+
+
+class AcceptInviteRequest(BaseModel):
+    token: str
+    password: str
+
+
+@router.post("/invite")
+async def invite_agent(
+    req: InviteRequest,
+    admin: Agent = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    existing = await db.execute(
+        select(Agent).where(Agent.org_id == admin.org_id, Agent.email == req.email)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Agent already exists")
+
+    agent = Agent(
+        org_id=admin.org_id,
+        email=req.email,
+        password_hash="",
+        name=req.name,
+        role=req.role,
+        is_verified=False,
+    )
+    db.add(agent)
+    await db.commit()
+    await db.refresh(agent)
+
+    invite_token = create_access_token(agent.id, admin.org_id)
+    org_result = await db.execute(select(Organization).where(Organization.id == admin.org_id))
+    org = org_result.scalar_one()
+    await send_invite_email(req.email, org.name, invite_token)
+
+    return {"message": "Invite sent"}
+
+
+@router.post("/accept-invite", response_model=TokenResponse)
+async def accept_invite(req: AcceptInviteRequest, db: AsyncSession = Depends(get_db)):
+    try:
+        payload = jwt.decode(req.token, settings.JWT_SECRET, algorithms=[ALGORITHM])
+        agent_id = uuid.UUID(payload["sub"])
+        org_id = uuid.UUID(payload["org"])
+    except (JWTError, ValueError):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid invite token")
+
+    result = await db.execute(select(Agent).where(Agent.id == agent_id))
+    agent = result.scalar_one_or_none()
+    if not agent or agent.is_verified:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or already used invite")
+
+    agent.password_hash = hash_password(req.password)
+    agent.is_verified = True
+    await db.commit()
+
+    return TokenResponse(
+        access_token=create_access_token(agent.id, org_id),
+        refresh_token=create_refresh_token(agent.id, org_id),
     )
