@@ -1,3 +1,5 @@
+name: customer-support
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
