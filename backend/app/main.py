@@ -12,6 +12,8 @@ from app.api.knowledge import router as knowledge_router
 from app.api.messages import router as messages_router
 from app.api.org import router as org_router
 from app.api.private_notes import router as private_notes_router
+from app.ws.agent import router as ws_agent_router
+from app.ws.widget import router as ws_widget_router
 from app.config import settings
 
 
@@ -40,6 +42,8 @@ app.include_router(canned_router)
 app.include_router(knowledge_router)
 app.include_router(bot_flows_router)
 app.include_router(org_router)
+app.include_router(ws_widget_router)
+app.include_router(ws_agent_router)
 
 
 @app.get("/health")
