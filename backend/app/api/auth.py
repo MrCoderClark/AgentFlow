@@ -187,6 +187,23 @@ async def update_me(
     return agent
 
 
+class PasswordChangeRequest(BaseModel):
+    password: str
+
+
+@router.put("/me/password")
+async def change_password(
+    req: PasswordChangeRequest,
+    agent: Agent = Depends(get_current_agent),
+    db: AsyncSession = Depends(get_db),
+):
+    if len(req.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    agent.password_hash = hash_password(req.password)
+    await db.commit()
+    return {"message": "Password updated"}
+
+
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_AVATAR_SIZE = 5 * 1024 * 1024  # 5MB
 
