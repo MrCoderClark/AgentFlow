@@ -1,8 +1,14 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { api } from "./api";
+import { api, API_BASE } from "./api";
 import type { Agent, TokenResponse } from "@/types";
+
+export function resolveAvatarUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  if (url.startsWith("http")) return url;
+  return `${API_BASE}${url}`;
+}
 
 interface AuthState {
   agent: Agent | null;

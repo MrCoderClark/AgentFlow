@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell, LogOut, Search, MessageCircle, BarChart3 } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth, resolveAvatarUrl } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -46,7 +46,7 @@ export function Topbar() {
         <DropdownMenu>
           <DropdownMenuTrigger className="rounded-full focus:outline-none">
             <Avatar size="lg" className="ring-2 ring-primary/20">
-              {agent?.avatar_url && <AvatarImage src={agent.avatar_url} alt={agent.name} />}
+              {agent?.avatar_url && <AvatarImage src={resolveAvatarUrl(agent.avatar_url)!} alt={agent.name} />}
               <AvatarFallback className="bg-amber-100 text-amber-800 font-semibold text-sm">{initials}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>

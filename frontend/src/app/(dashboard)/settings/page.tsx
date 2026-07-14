@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth, resolveAvatarUrl } from "@/lib/auth-context";
 import { api } from "@/lib/api";
 import type { Agent, Organization } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -115,7 +115,7 @@ export default function SettingsPage() {
               />
               <button onClick={() => fileRef.current?.click()} className="group relative">
                 <Avatar size="lg" className="h-20 w-20 ring-2 ring-primary/20">
-                  {agent?.avatar_url && <AvatarImage src={agent.avatar_url} alt={agent.name} />}
+                  {agent?.avatar_url && <AvatarImage src={resolveAvatarUrl(agent.avatar_url)!} alt={agent.name} />}
                   <AvatarFallback className="bg-amber-100 text-amber-800 font-semibold text-lg">{initials}</AvatarFallback>
                 </Avatar>
                 <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">

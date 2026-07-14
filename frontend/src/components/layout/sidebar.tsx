@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth, resolveAvatarUrl } from "@/lib/auth-context";
 import {
   Inbox,
   Users,
@@ -96,7 +96,7 @@ export function Sidebar() {
           </button>
           {/* User avatar at very bottom */}
           {agent?.avatar_url ? (
-            <img src={agent.avatar_url} alt={agent.name} className="mt-1 h-8 w-8 rounded-full object-cover ring-2 ring-sidebar-accent" />
+            <img src={resolveAvatarUrl(agent.avatar_url)!} alt={agent.name} className="mt-1 h-8 w-8 rounded-full object-cover ring-2 ring-sidebar-accent" />
           ) : (
             <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-amber-200 text-amber-900 text-xs font-semibold ring-2 ring-sidebar-accent">
               {initials}
