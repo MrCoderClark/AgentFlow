@@ -75,3 +75,12 @@ async def delete_api_key(
         raise HTTPException(status_code=404, detail="Not found")
     await db.delete(key)
     await db.commit()
+
+
+@router.get("/widget-config/{org_slug}")
+async def get_widget_config(org_slug: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Organization).where(Organization.slug == org_slug))
+    org = result.scalar_one_or_none()
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    return org.widget_config
