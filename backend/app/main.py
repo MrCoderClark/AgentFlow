@@ -1,7 +1,10 @@
+import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.auth import router as auth_router
 from app.api.bot_flows import router as bot_flows_router
@@ -44,6 +47,12 @@ app.include_router(bot_flows_router)
 app.include_router(org_router)
 app.include_router(ws_widget_router)
 app.include_router(ws_agent_router)
+
+
+uploads_dir = Path(settings.UPLOAD_DIR)
+uploads_dir.mkdir(exist_ok=True)
+(uploads_dir / "avatars").mkdir(exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 
 
 @app.get("/health")

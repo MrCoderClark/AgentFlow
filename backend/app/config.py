@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
     SMTP_HOST: str = "localhost"
     SMTP_PORT: int = 1025
+    UPLOAD_DIR: str = "uploads"
 
     model_config = {"env_file": ".env"}
 

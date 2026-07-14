@@ -10,6 +10,8 @@ interface AuthState {
   login: (email: string, password: string, orgSlug: string) => Promise<void>;
   register: (orgName: string, orgSlug: string, email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
+  updateAgent: (updates: Partial<Agent>) => void;
+  uploadAvatar: (file: File) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -67,8 +69,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = "/login";
   };
 
+  const updateAgent = (updates: Partial<Agent>) => {
+    setAgent((prev) => prev ? { ...prev, ...updates } : prev);
+  };
+
+  const uploadAvatar = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const token = localStorage.getItem("access_token");
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/auth/me/avatar`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    if (!res.ok) throw new Error("Upload failed");
+    const updated: Agent = await res.json();
+    setAgent((prev) => prev ? { ...prev, avatar_url: updated.avatar_url } : prev);
+  };
+
   return (
-    <AuthContext value={{ agent, loading, login, register, logout }}>
+    <AuthContext value={{ agent, loading, login, register, logout, updateAgent, uploadAvatar }}>
       {children}
     </AuthContext>
   );

@@ -1,7 +1,8 @@
 import uuid
+from pathlib import Path
 
 import bcrypt
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -181,6 +182,36 @@ async def update_me(
         agent.avatar_url = req.avatar_url
     if req.status is not None:
         agent.status = req.status
+    await db.commit()
+    await db.refresh(agent)
+    return agent
+
+
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+MAX_AVATAR_SIZE = 5 * 1024 * 1024  # 5MB
+
+
+@router.post("/me/avatar", response_model=AgentResponse)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    agent: Agent = Depends(get_current_agent),
+    db: AsyncSession = Depends(get_db),
+):
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=400, detail="File must be JPEG, PNG, WebP, or GIF")
+
+    data = await file.read()
+    if len(data) > MAX_AVATAR_SIZE:
+        raise HTTPException(status_code=400, detail="File must be under 5MB")
+
+    ext = file.filename.rsplit(".", 1)[-1] if file.filename and "." in file.filename else "jpg"
+    filename = f"{agent.id}.{ext}"
+    avatar_dir = Path(settings.UPLOAD_DIR) / "avatars"
+    avatar_dir.mkdir(parents=True, exist_ok=True)
+    filepath = avatar_dir / filename
+    filepath.write_bytes(data)
+
+    agent.avatar_url = f"/uploads/avatars/{filename}"
     await db.commit()
     await db.refresh(agent)
     return agent

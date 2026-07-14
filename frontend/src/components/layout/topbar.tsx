@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, LogOut, Search, MessageCircle, BarChart3 } from "lucide-react";
+import { useRef } from "react";
+import { Bell, LogOut, Search, MessageCircle, BarChart3, Upload } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,11 +14,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function Topbar() {
-  const { agent, logout } = useAuth();
+  const { agent, logout, uploadAvatar } = useAuth();
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const initials = agent?.name
     ? agent.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "??";
+
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadAvatar(file);
+    e.target.value = "";
+  }
 
   return (
     <header className="flex h-14 items-center justify-between border-b bg-card px-4">
@@ -43,6 +52,14 @@ export function Topbar() {
           <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-emerald-500" />
         </Button>
 
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="hidden"
+          onChange={handleAvatarUpload}
+        />
+
         <DropdownMenu>
           <DropdownMenuTrigger className="rounded-full focus:outline-none">
             <Avatar size="lg" className="ring-2 ring-primary/20">
@@ -51,6 +68,9 @@ export function Topbar() {
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => fileRef.current?.click()}>
+              <Upload className="mr-2 h-4 w-4" /> Upload avatar
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={logout}>
               <LogOut className="mr-2 h-4 w-4" /> Sign out
             </DropdownMenuItem>
