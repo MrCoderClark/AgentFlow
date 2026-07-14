@@ -45,8 +45,8 @@ export function Topbar() {
 
         <DropdownMenu>
           <DropdownMenuTrigger className="rounded-full focus:outline-none">
-            <Avatar>
-              <AvatarFallback>{initials}</AvatarFallback>
+            <Avatar size="lg" className="ring-2 ring-primary/20">
+              <AvatarFallback className="bg-amber-100 text-amber-800 font-semibold text-sm">{initials}</AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">

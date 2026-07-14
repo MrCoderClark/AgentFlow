@@ -85,10 +85,14 @@ export function Sidebar() {
               <TooltipContent side="right">{label}</TooltipContent>
             </Tooltip>
           ))}
-          {/* Grid/apps icon at very bottom */}
+          {/* Grid/apps icon */}
           <button className="mt-1 flex h-9 w-9 items-center justify-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent/50">
             <LayoutGrid className="h-[18px] w-[18px]" />
           </button>
+          {/* User avatar at very bottom */}
+          <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-amber-200 text-amber-900 text-xs font-semibold ring-2 ring-sidebar-accent">
+            U
+          </div>
         </div>
       </TooltipProvider>
     </aside>
