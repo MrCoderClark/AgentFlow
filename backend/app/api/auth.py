@@ -8,10 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from pydantic import BaseModel
 
-from app.api.deps import ALGORITHM, create_access_token, create_refresh_token, require_admin
+from app.api.deps import ALGORITHM, create_access_token, create_refresh_token, get_current_agent, require_admin
 from app.config import settings
 from app.database import get_db
 from app.models import Agent, AgentRole, Organization
+from app.schemas.agent import AgentResponse, AgentUpdateRequest
 from app.schemas.auth import (
     InviteRequest,
     LoginRequest,
@@ -55,7 +56,7 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
     await db.refresh(agent)
 
     return TokenResponse(
-        access_token=create_access_token(agent.id, org.id),
+        access_token=create_access_token(agent.id, org.id, name=agent.name, email=agent.email, avatar_url=agent.avatar_url),
         refresh_token=create_refresh_token(agent.id, org.id),
     )
 
@@ -75,7 +76,7 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
     return TokenResponse(
-        access_token=create_access_token(agent.id, org.id),
+        access_token=create_access_token(agent.id, org.id, name=agent.name, email=agent.email, avatar_url=agent.avatar_url),
         refresh_token=create_refresh_token(agent.id, org.id),
     )
 
@@ -92,12 +93,13 @@ async def refresh(req: RefreshRequest, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
     result = await db.execute(select(Agent).where(Agent.id == agent_id))
-    if not result.scalar_one_or_none():
+    agent = result.scalar_one_or_none()
+    if not agent:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Agent not found")
 
     return TokenResponse(
-        access_token=create_access_token(agent_id, org_id),
-        refresh_token=create_refresh_token(agent_id, org_id),
+        access_token=create_access_token(agent.id, org_id, name=agent.name, email=agent.email, avatar_url=agent.avatar_url),
+        refresh_token=create_refresh_token(agent.id, org_id),
     )
 
 
@@ -130,7 +132,7 @@ async def invite_agent(
     await db.commit()
     await db.refresh(agent)
 
-    invite_token = create_access_token(agent.id, admin.org_id)
+    invite_token = create_access_token(agent.id, admin.org_id, name=agent.name, email=agent.email)
     org_result = await db.execute(select(Organization).where(Organization.id == admin.org_id))
     org = org_result.scalar_one()
     await send_invite_email(req.email, org.name, invite_token)
@@ -157,6 +159,28 @@ async def accept_invite(req: AcceptInviteRequest, db: AsyncSession = Depends(get
     await db.commit()
 
     return TokenResponse(
-        access_token=create_access_token(agent.id, org_id),
+        access_token=create_access_token(agent.id, org_id, name=agent.name, email=agent.email, avatar_url=agent.avatar_url),
         refresh_token=create_refresh_token(agent.id, org_id),
     )
+
+
+@router.get("/me", response_model=AgentResponse)
+async def get_me(agent: Agent = Depends(get_current_agent)):
+    return agent
+
+
+@router.put("/me", response_model=AgentResponse)
+async def update_me(
+    req: AgentUpdateRequest,
+    agent: Agent = Depends(get_current_agent),
+    db: AsyncSession = Depends(get_db),
+):
+    if req.name is not None:
+        agent.name = req.name
+    if req.avatar_url is not None:
+        agent.avatar_url = req.avatar_url
+    if req.status is not None:
+        agent.status = req.status
+    await db.commit()
+    await db.refresh(agent)
+    return agent

@@ -18,12 +18,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [agent, setAgent] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
 
+  function agentFromToken(token: string): Agent {
+    const p = JSON.parse(atob(token.split(".")[1]));
+    return {
+      id: p.sub,
+      org_id: p.org,
+      name: p.name || "",
+      email: p.email || "",
+      avatar_url: p.avatar_url || null,
+      role: "agent",
+      status: "online",
+      created_at: "",
+    };
+  }
+
   useEffect(() => {
     const token = localStorage.getItem("access_token");
     if (token) {
       try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        setAgent({ id: payload.sub, org_id: payload.org } as Agent);
+        setAgent(agentFromToken(token));
       } catch {
         localStorage.removeItem("access_token");
       }
@@ -35,8 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const tokens = await api.post<TokenResponse>("/api/auth/login", { email, password, org_slug: orgSlug });
     localStorage.setItem("access_token", tokens.access_token);
     localStorage.setItem("refresh_token", tokens.refresh_token);
-    const payload = JSON.parse(atob(tokens.access_token.split(".")[1]));
-    setAgent({ id: payload.sub, org_id: payload.org } as Agent);
+    setAgent(agentFromToken(tokens.access_token));
   };
 
   const register = async (orgName: string, orgSlug: string, email: string, password: string, name: string) => {
@@ -45,8 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     localStorage.setItem("access_token", tokens.access_token);
     localStorage.setItem("refresh_token", tokens.refresh_token);
-    const payload = JSON.parse(atob(tokens.access_token.split(".")[1]));
-    setAgent({ id: payload.sub, org_id: payload.org } as Agent);
+    setAgent(agentFromToken(tokens.access_token));
   };
 
   const logout = () => {

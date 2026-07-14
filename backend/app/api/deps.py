@@ -16,13 +16,25 @@ security = HTTPBearer()
 ALGORITHM = "HS256"
 
 
-def create_access_token(agent_id: uuid.UUID, org_id: uuid.UUID) -> str:
+def create_access_token(
+    agent_id: uuid.UUID,
+    org_id: uuid.UUID,
+    name: str = "",
+    email: str = "",
+    avatar_url: str | None = None,
+) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.JWT_ACCESS_EXPIRY_MINUTES)
-    return jwt.encode(
-        {"sub": str(agent_id), "org": str(org_id), "exp": expire, "type": "access"},
-        settings.JWT_SECRET,
-        algorithm=ALGORITHM,
-    )
+    payload: dict = {
+        "sub": str(agent_id),
+        "org": str(org_id),
+        "name": name,
+        "email": email,
+        "exp": expire,
+        "type": "access",
+    }
+    if avatar_url:
+        payload["avatar_url"] = avatar_url
+    return jwt.encode(payload, settings.JWT_SECRET, algorithm=ALGORITHM)
 
 
 def create_refresh_token(agent_id: uuid.UUID, org_id: uuid.UUID) -> str:
