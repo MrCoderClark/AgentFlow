@@ -6,8 +6,7 @@ import { api } from "@/lib/api";
 import type { BotFlow } from "@/types";
 import { FlowCanvas } from "@/components/flows/flow-canvas";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Zap, Search, SlidersHorizontal, Clock, X } from "lucide-react";
+import { Zap, Search, SlidersHorizontal, Clock, X, Send, MoreVertical, MessageSquare } from "lucide-react";
 import type { Node, Edge } from "@xyflow/react";
 
 export default function FlowEditorPage() {
@@ -49,37 +48,42 @@ export default function FlowEditorPage() {
   return (
     <div className="flex h-full flex-col">
       {/* Topbar — matches Design-Flow */}
-      <div className="flex items-center justify-between border-b px-4 py-2">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/flows")} className="text-sm text-muted-foreground hover:text-foreground">
-            ← Back
-          </button>
-          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-8 max-w-xs text-sm font-medium" />
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={save} disabled={saving}>
-            <Zap className="h-4 w-4" />
+      <div className="flex items-center justify-between border-b bg-card px-5 py-2.5">
+        <h1 className="text-lg font-semibold text-foreground">{name || "Untitled flow"}</h1>
+        <div className="flex items-center gap-1.5">
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground" onClick={save} disabled={saving}>
+            <Zap className="h-[18px] w-[18px]" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Search className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
+            <Search className="h-[18px] w-[18px]" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <SlidersHorizontal className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
+            <SlidersHorizontal className="h-[18px] w-[18px]" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Clock className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground">
+            <Clock className="h-[18px] w-[18px]" />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setTestOpen(!testOpen)}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-2 h-9 border-primary text-primary hover:bg-primary/5 font-medium"
+            onClick={() => setTestOpen(!testOpen)}
+          >
             Test your bot
           </Button>
-          <Button size="sm" onClick={activate} className="gap-1.5">
-            <span>▶</span> Publish
+          <Button
+            size="sm"
+            className="h-9 gap-2 bg-primary hover:bg-primary/90 font-medium"
+            onClick={activate}
+          >
+            <Send className="h-4 w-4" />
+            Publish
           </Button>
         </div>
       </div>
 
       {/* Canvas + optional test panel */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="relative flex flex-1 overflow-hidden">
         <div className="flex-1">
           <FlowCanvas
             initialNodes={(flow.flow_data.nodes as Node[]) || []}
@@ -91,47 +95,114 @@ export default function FlowEditorPage() {
           />
         </div>
 
-        {/* Test bot panel — right side chat preview */}
+        {/* Test bot panel — chat preview matching Design-Flow */}
         {testOpen && (
-          <div className="w-[380px] border-l flex flex-col">
+          <div className="w-[380px] border-l bg-card flex flex-col shadow-lg">
+            {/* Header */}
             <div className="flex items-center justify-between border-b px-4 py-3">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
-                  <span className="text-xs text-primary-foreground font-bold">B</span>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary">
+                  <MessageSquare className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold">Bot</p>
-                  <p className="text-xs text-emerald-500">Online</p>
+                  <p className="text-base font-bold">Bot</p>
+                  <div className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                    <span className="text-xs text-muted-foreground">Online</span>
+                  </div>
                 </div>
               </div>
-              <button onClick={() => setTestOpen(false)} className="rounded p-1 hover:bg-accent">
-                <X className="h-4 w-4 text-muted-foreground" />
-              </button>
-            </div>
-            <div className="flex-1 p-4 space-y-3 overflow-y-auto">
-              <div className="text-xs text-muted-foreground">Bot</div>
-              <div className="bg-muted rounded-lg px-3 py-2 text-sm max-w-[80%]">
-                Thanks. What&apos;s your name?
-              </div>
-              <div className="text-xs text-muted-foreground text-right">You</div>
-              <div className="bg-primary text-primary-foreground rounded-lg px-3 py-2 text-sm max-w-[80%] ml-auto">
-                Test User
-              </div>
-              <div className="text-xs text-muted-foreground">Bot</div>
-              <div className="bg-muted rounded-lg px-3 py-2 text-sm max-w-[80%]">
-                Please, describe your problem below
+              <div className="flex items-center gap-1">
+                <button className="rounded p-1.5 hover:bg-accent">
+                  <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                </button>
+                <button onClick={() => setTestOpen(false)} className="rounded p-1.5 hover:bg-accent">
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
               </div>
             </div>
-            <div className="border-t p-3">
-              <div className="flex gap-2">
+
+            {/* Messages */}
+            <div className="flex-1 space-y-4 overflow-y-auto p-4">
+              {/* Bot message */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                    <MessageSquare className="h-3 w-3 text-primary-foreground" />
+                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">Bot</span>
+                </div>
+                <div className="rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5 text-sm max-w-[85%]">
+                  Thanks. What&apos;s your name?
+                </div>
+              </div>
+
+              {/* User message */}
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-medium text-muted-foreground mb-1">You</span>
+                <div className="rounded-2xl rounded-br-sm bg-primary text-primary-foreground px-4 py-2.5 text-sm max-w-[85%]">
+                  Annie Hall
+                </div>
+              </div>
+
+              {/* Bot message */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                    <MessageSquare className="h-3 w-3 text-primary-foreground" />
+                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">Bot</span>
+                </div>
+                <div className="rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5 text-sm max-w-[85%]">
+                  Please, describe your problem below ⬇
+                </div>
+              </div>
+
+              {/* User message */}
+              <div className="flex flex-col items-end">
+                <span className="text-xs font-medium text-muted-foreground mb-1">You</span>
+                <div className="rounded-2xl rounded-br-sm bg-primary text-primary-foreground px-4 py-2.5 text-sm max-w-[85%]">
+                  What can I do if the Order Tracking system says that my package is delivered, but I don&apos;t have my package?
+                </div>
+              </div>
+
+              {/* Bot message */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                    <MessageSquare className="h-3 w-3 text-primary-foreground" />
+                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">Bot</span>
+                </div>
+                <div className="rounded-2xl rounded-bl-sm bg-muted px-4 py-2.5 text-sm max-w-[85%]">
+                  Thanks for your message. I&apos;ll pass it to our Customer Service Team. <span className="text-xs text-muted-foreground">soon</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Input */}
+            <div className="border-t px-4 py-3">
+              <div className="flex items-center gap-2">
                 <input
                   placeholder="Send a message..."
-                  className="flex-1 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="flex-1 rounded-full border bg-background px-4 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                 />
-                <Button size="icon" className="h-9 w-9">▶</Button>
+                <button className="flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-primary">
+                  <Send className="h-4 w-4" />
+                </button>
               </div>
             </div>
           </div>
+        )}
+
+        {/* Floating chat bubble — bottom right */}
+        {!testOpen && (
+          <button
+            onClick={() => setTestOpen(true)}
+            className="absolute bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg hover:bg-primary/90 transition-colors"
+          >
+            <MessageSquare className="h-6 w-6 text-primary-foreground" />
+          </button>
         )}
       </div>
     </div>

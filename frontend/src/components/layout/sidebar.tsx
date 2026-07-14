@@ -5,23 +5,36 @@ import { usePathname } from "next/navigation";
 import {
   Inbox,
   Users,
+  UserPlus,
+  MessageSquare,
   BookOpen,
   Workflow,
-  Settings,
-  MessageSquare,
-  BarChart3,
-  Phone,
   Crosshair,
+  Phone,
+  BarChart3,
+  Bell,
+  HelpCircle,
+  Settings,
   LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-const navItems = [
-  { href: "/inbox", icon: Inbox, label: "Inbox" },
+const topNav = [
+  { href: "/inbox", icon: MessageSquare, label: "Inbox" },
   { href: "/contacts", icon: Users, label: "Contacts" },
+  { href: "/contacts", icon: UserPlus, label: "Leads" },
+  { href: "/inbox", icon: Inbox, label: "Conversations" },
   { href: "/knowledge", icon: BookOpen, label: "Knowledge Base" },
   { href: "/flows", icon: Workflow, label: "Bot Flows" },
+  { href: "/settings", icon: Crosshair, label: "Campaigns" },
+  { href: "/settings", icon: Phone, label: "Phone" },
+  { href: "/settings", icon: BarChart3, label: "Reports" },
+];
+
+const bottomNav = [
+  { href: "/settings", icon: Bell, label: "Notifications" },
+  { href: "/settings", icon: HelpCircle, label: "Help" },
   { href: "/settings", icon: Settings, label: "Settings" },
 ];
 
@@ -29,25 +42,25 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-full w-14 flex-col items-center bg-[hsl(var(--sidebar))] border-r py-3">
+    <aside className="flex h-full w-[52px] flex-col items-center bg-sidebar py-3">
       {/* Logo */}
-      <Link href="/inbox" className="mb-6 flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-        <MessageSquare className="h-5 w-5 text-primary-foreground" />
+      <Link href="/inbox" className="mb-5 flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary">
+        <MessageSquare className="h-5 w-5 text-sidebar-primary-foreground" />
       </Link>
 
-      {/* Navigation */}
+      {/* Top nav */}
       <TooltipProvider delay={0}>
-        <nav className="flex flex-1 flex-col items-center gap-1">
-          {navItems.map(({ href, icon: Icon, label }) => {
-            const active = pathname.startsWith(href);
+        <nav className="flex flex-1 flex-col items-center gap-0.5">
+          {topNav.map(({ href, icon: Icon, label }, i) => {
+            const active = pathname.startsWith(href) && i === 0;
             return (
-              <Tooltip key={href}>
+              <Tooltip key={`${href}-${i}`}>
                 <TooltipTrigger
                   className={cn(
                     "flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
                     active
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
                   )}
                   render={<Link href={href} />}
                 >
@@ -58,14 +71,26 @@ export function Sidebar() {
             );
           })}
         </nav>
-      </TooltipProvider>
 
-      {/* Bottom icons */}
-      <div className="flex flex-col items-center gap-1 mt-auto">
-        <button className="flex h-9 w-9 items-center justify-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent">
-          <LayoutGrid className="h-[18px] w-[18px]" />
-        </button>
-      </div>
+        {/* Bottom nav */}
+        <div className="flex flex-col items-center gap-0.5 mt-auto">
+          {bottomNav.map(({ href, icon: Icon, label }, i) => (
+            <Tooltip key={`bottom-${i}`}>
+              <TooltipTrigger
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+                render={<Link href={href} />}
+              >
+                <Icon className="h-[18px] w-[18px]" />
+              </TooltipTrigger>
+              <TooltipContent side="right">{label}</TooltipContent>
+            </Tooltip>
+          ))}
+          {/* Grid/apps icon at very bottom */}
+          <button className="mt-1 flex h-9 w-9 items-center justify-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent/50">
+            <LayoutGrid className="h-[18px] w-[18px]" />
+          </button>
+        </div>
+      </TooltipProvider>
     </aside>
   );
 }

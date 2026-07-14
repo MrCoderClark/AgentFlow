@@ -11,19 +11,25 @@ import {
   type Connection,
   type Edge,
   type Node,
+  type DefaultEdgeOptions,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { TriggerNode } from "./nodes/trigger-node";
 import { BotResponseNode } from "./nodes/bot-response-node";
 import { ConditionNode } from "./nodes/condition-node";
 import { ActionNode } from "./nodes/action-node";
-import { FlowToolbar } from "./flow-toolbar";
 
 const nodeTypes = {
   trigger: TriggerNode,
   bot_response: BotResponseNode,
   condition: ConditionNode,
   action: ActionNode,
+};
+
+const defaultEdgeOptions: DefaultEdgeOptions = {
+  type: "smoothstep",
+  style: { stroke: "#4da6e8", strokeWidth: 2 },
+  animated: false,
 };
 
 interface FlowCanvasProps {
@@ -75,30 +81,31 @@ export function FlowCanvas({ initialNodes, initialEdges, onChange }: FlowCanvasP
   }, []);
 
   return (
-    <div className="flex h-full">
-      <FlowToolbar />
-      <div className="flex-1">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={(changes) => {
-            onNodesChange(changes);
-            onChange(nodes, edges);
-          }}
-          onEdgesChange={(changes) => {
-            onEdgesChange(changes);
-            onChange(nodes, edges);
-          }}
-          onConnect={onConnect}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          nodeTypes={nodeTypes}
-          fitView
-        >
-          <Background />
-          <Controls />
-        </ReactFlow>
-      </div>
+    <div className="h-full w-full">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={(changes) => {
+          onNodesChange(changes);
+          onChange(nodes, edges);
+        }}
+        onEdgesChange={(changes) => {
+          onEdgesChange(changes);
+          onChange(nodes, edges);
+        }}
+        onConnect={onConnect}
+        onDrop={onDrop}
+        onDragOver={onDragOver}
+        nodeTypes={nodeTypes}
+        defaultEdgeOptions={defaultEdgeOptions}
+        fitView
+      >
+        <Background color="#e5e7eb" gap={20} />
+        <Controls
+          showInteractive={false}
+          className="!shadow-md !rounded-lg !border !border-border/50 !bg-white"
+        />
+      </ReactFlow>
     </div>
   );
 }
