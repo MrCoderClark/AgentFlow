@@ -26,11 +26,14 @@ Read in this exact order before any implementation:
 - Update `progress-tracker.md` and `ui-registry.md` after every feature
 - Before any third party library — load its installed skill first,
   then read `context/library-docs.md` for project-specific rules
-- When a design image is provided, match it exactly — see
-  `context/ui-rules.md` → "Design Image Fidelity" for how to verify this
-  (exact spacing/overlap, check assets for baked-in artifacts, zoomed
-  crop comparison, never claim "fixed" without re-checking the exact
-  thing that was called out)
+- **Design Image Fidelity (CRITICAL):** Before building ANY UI component,
+  read the design images in `context/designs/`. Match them exactly —
+  every element, spacing, color, icon, layout, and interaction visible in
+  the design MUST appear in the implementation. After building, re-read the
+  design and compare. Never claim a UI task is done without verifying against
+  the design image. Available designs:
+  - `context/designs/Design-Backend.webp` — Agent inbox (3-panel)
+  - `context/designs/Design-Flow.png` — Bot flow builder + widget preview
 - If the same problem persists after one corrective prompt —
   stop immediately and run /recover
 
