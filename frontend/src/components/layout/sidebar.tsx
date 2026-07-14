@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
 import {
   Inbox,
   Users,
@@ -40,6 +41,10 @@ const bottomNav = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { agent } = useAuth();
+  const initials = agent?.name
+    ? agent.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "??";
 
   return (
     <aside className="flex h-full w-[52px] flex-col items-center bg-sidebar py-3">
@@ -91,7 +96,7 @@ export function Sidebar() {
           </button>
           {/* User avatar at very bottom */}
           <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-amber-200 text-amber-900 text-xs font-semibold ring-2 ring-sidebar-accent">
-            U
+            {initials}
           </div>
         </div>
       </TooltipProvider>
