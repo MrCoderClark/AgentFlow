@@ -45,8 +45,14 @@ export default function ConversationPage() {
   return (
     <div className="flex h-full">
       <ConversationList />
-      <ChatPanel conversationId={id} onSend={handleSend} incomingMessage={incomingMessage} />
-      {conversation?.contact_id && <ContactInfoPanel contactId={conversation.contact_id} />}
+      {conversation ? (
+        <>
+          <ChatPanel conversation={conversation} onSend={handleSend} incomingMessage={incomingMessage} />
+          {conversation.contact_id && <ContactInfoPanel contactId={conversation.contact_id} />}
+        </>
+      ) : (
+        <div className="flex flex-1 items-center justify-center text-muted-foreground">Loading…</div>
+      )}
     </div>
   );
 }
