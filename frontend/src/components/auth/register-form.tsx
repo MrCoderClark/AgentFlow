@@ -4,16 +4,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import type { TokenResponse } from "@/types";
 
 export function RegisterForm() {
   const { register } = useAuth();
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkEmail, setCheckEmail] = useState(false);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -21,19 +24,42 @@ export function RegisterForm() {
     setLoading(true);
     const fd = new FormData(e.currentTarget);
     try {
-      await register(
-        fd.get("org_name") as string,
-        fd.get("org_slug") as string,
-        fd.get("email") as string,
-        fd.get("password") as string,
-        fd.get("name") as string,
-      );
-      router.push("/inbox");
+      const res = await api.post<TokenResponse | { message: string }>("/api/auth/register", {
+        org_name: fd.get("org_name") as string,
+        org_slug: fd.get("org_slug") as string,
+        email: fd.get("email") as string,
+        password: fd.get("password") as string,
+        name: fd.get("name") as string,
+      });
+
+      if ("access_token" in res) {
+        localStorage.setItem("access_token", res.access_token);
+        localStorage.setItem("refresh_token", res.refresh_token);
+        router.push("/inbox");
+      } else {
+        setCheckEmail(true);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (checkEmail) {
+    return (
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Check your email</CardTitle>
+          <CardDescription>
+            We sent a verification link to your email address. Click it to activate your account.
+          </CardDescription>
+        </CardHeader>
+        <CardFooter className="justify-center">
+          <Link href="/login" className="text-sm text-primary underline">Back to login</Link>
+        </CardFooter>
+      </Card>
+    );
   }
 
   return (

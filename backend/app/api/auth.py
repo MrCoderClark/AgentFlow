@@ -21,7 +21,7 @@ from app.schemas.auth import (
     RegisterRequest,
     TokenResponse,
 )
-from app.services.email import send_invite_email
+from app.services.email import send_invite_email, send_verification_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -34,7 +34,7 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(Organization).where(Organization.slug == req.org_slug))
     if existing.scalar_one_or_none():
@@ -50,15 +50,50 @@ async def register(req: RegisterRequest, db: AsyncSession = Depends(get_db)):
         password_hash=hash_password(req.password),
         name=req.name,
         role=AgentRole.admin,
-        is_verified=True,
+        is_verified=False,
     )
     db.add(agent)
     await db.commit()
     await db.refresh(agent)
 
+    verify_token = create_access_token(agent.id, org.id, name=agent.name, email=agent.email)
+    try:
+        await send_verification_email(req.email, verify_token)
+    except Exception:
+        agent.is_verified = True
+        await db.commit()
+        return TokenResponse(
+            access_token=create_access_token(agent.id, org.id, name=agent.name, email=agent.email, avatar_url=agent.avatar_url),
+            refresh_token=create_refresh_token(agent.id, org.id),
+        )
+
+    return {"message": "Check your email to verify your account"}
+
+
+@router.post("/verify-email", response_model=TokenResponse)
+async def verify_email(req: dict, db: AsyncSession = Depends(get_db)):
+    token = req.get("token", "")
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[ALGORITHM])
+        agent_id = uuid.UUID(payload["sub"])
+        org_id = uuid.UUID(payload["org"])
+    except (JWTError, ValueError, KeyError):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification link")
+
+    result = await db.execute(select(Agent).where(Agent.id == agent_id))
+    agent = result.scalar_one_or_none()
+    if not agent:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Agent not found")
+
+    if agent.is_verified:
+        pass
+
+    agent.is_verified = True
+    await db.commit()
+
     return TokenResponse(
-        access_token=create_access_token(agent.id, org.id, name=agent.name, email=agent.email, avatar_url=agent.avatar_url),
-        refresh_token=create_refresh_token(agent.id, org.id),
+        access_token=create_access_token(agent.id, org_id, name=agent.name, email=agent.email, avatar_url=agent.avatar_url),
+        refresh_token=create_refresh_token(agent.id, org_id),
     )
 
 
@@ -75,6 +110,9 @@ async def login(req: LoginRequest, db: AsyncSession = Depends(get_db)):
     agent = agent_result.scalar_one_or_none()
     if not agent or not verify_password(req.password, agent.password_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+    if not agent.is_verified:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Please verify your email first")
 
     return TokenResponse(
         access_token=create_access_token(agent.id, org.id, name=agent.name, email=agent.email, avatar_url=agent.avatar_url),
@@ -155,6 +193,9 @@ async def accept_invite(req: AcceptInviteRequest, db: AsyncSession = Depends(get
     if not agent or agent.is_verified:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or already used invite")
 
+    if len(req.password) < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be at least 8 characters")
+
     agent.password_hash = hash_password(req.password)
     agent.is_verified = True
     await db.commit()
@@ -163,6 +204,15 @@ async def accept_invite(req: AcceptInviteRequest, db: AsyncSession = Depends(get
         access_token=create_access_token(agent.id, org_id, name=agent.name, email=agent.email, avatar_url=agent.avatar_url),
         refresh_token=create_refresh_token(agent.id, org_id),
     )
+
+
+@router.get("/agents", response_model=list[AgentResponse])
+async def list_agents(
+    agent: Agent = Depends(get_current_agent),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(Agent).where(Agent.org_id == agent.org_id))
+    return result.scalars().all()
 
 
 @router.get("/me", response_model=AgentResponse)
