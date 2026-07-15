@@ -90,7 +90,6 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl space-y-6 p-6">
-      <h2 className="text-xl font-semibold">Settings</h2>
       <Tabs defaultValue="profile">
         <TabsList>
           <TabsTrigger value="profile">Profile</TabsTrigger>

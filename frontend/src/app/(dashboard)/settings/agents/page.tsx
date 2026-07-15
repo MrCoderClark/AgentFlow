@@ -16,7 +16,7 @@ export default function AgentsPage() {
   const [inviting, setInviting] = useState(false);
 
   useEffect(() => {
-    api.get<Agent[]>("/api/agents").then(setAgents).catch(() => {});
+    api.get<Agent[]>("/api/auth/agents").then(setAgents).catch(() => {});
   }, []);
 
   async function handleInvite(e: React.FormEvent<HTMLFormElement>) {
@@ -30,7 +30,7 @@ export default function AgentsPage() {
     });
     setOpen(false);
     setInviting(false);
-    api.get<Agent[]>("/api/agents").then(setAgents).catch(() => {});
+    api.get<Agent[]>("/api/auth/agents").then(setAgents).catch(() => {});
   }
 
   return (
